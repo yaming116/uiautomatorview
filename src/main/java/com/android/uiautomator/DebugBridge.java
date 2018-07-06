@@ -29,8 +29,13 @@ public class DebugBridge {
 
     private static String getAdbLocation() {
         String toolsDir = System.getProperty("com.android.uiautomator.bindir"); //$NON-NLS-1$
-        if (toolsDir == null) {
+        String androidHome = System.getenv("ANDROID_HOME");
+        if (toolsDir == null && androidHome == null) {
             return null;
+        }
+
+        if (toolsDir == null) {
+            toolsDir = androidHome + File.separator + "tools";
         }
 
         File sdk = new File(toolsDir).getParentFile();
