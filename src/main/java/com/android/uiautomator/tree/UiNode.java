@@ -36,6 +36,7 @@ public class UiNode extends BasicTreeNode {
         if ("bounds".equals(key)) {
             updateBounds(value);
         }
+        mAttributes.put("xpath", getXpath());
     }
 
     public Map<String, String> getAttributes() {
@@ -121,5 +122,19 @@ public class UiNode extends BasicTreeNode {
         return mCachedAttributesArray;
     }
 
+    public String getXpath() {
+        String className = getAttribute("class");
+        String xpath = "//" + className;
+        String text = getAttribute("text");
+        if (text != null && !text.equals("")) {
+            xpath += "[@text='" + text + "']";
+            return xpath;
+        } else {
+            return getAttribute("content-desc") != "" ?
+                    xpath + "[@content-desc='" + getAttribute("content-desc") + "']"
+                    : xpath + "[@index='" + getAttribute("index") + "']";
+        }
 
+
+    }
 }
