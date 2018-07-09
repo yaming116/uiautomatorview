@@ -1,3 +1,9 @@
+UIautomatorvViewer
+===
+
+为什么又重新开一个UIautomatorvViewer的项目？
+1. 目前社区或能查到修改版本和开放源码的版本的基本都是基于4.4之前的版本，目前Android已经9.x了。
+2. 编写一个易于大家修改构建的版本，目前只需按照下面说明，直接可以从官网选择自己喜欢的版本构建。
 
 ##### 使用方式：
 方式1.直接下载根目录下的uiautomatorviewer.jar,替换你本地的${ANDROID_HOME}/tools/lib下的uiautomatorviewer.jar即可
@@ -12,8 +18,26 @@
     - 语言环境：java
     - 还要必不可少的android sdk
     
+    
 ##### 下载源码
-- 下载[uiautomatorviewer源代码](https://android.googlesource.com/platform/tools/swt/+/marshmallow-mr3-release/uiautomatorviewer/)
-
+- 下载[marshmallow uiautomatorviewer源代码](https://android.googlesource.com/platform/tools/swt/+/marshmallow-mr3-release/uiautomatorviewer/)，不同版本的代码可以自己切换分支下载。
+- 依赖`jar`可以右键以`zip`形式打开`uiautomatorviewer.jar`在 `META-INF\MANIFEST.MF`找到，如下：
+```
+Manifest-Version: 1.0
+Class-Path:  org-eclipse-jface-3.6.2.jar ddmlib.jar org-eclipse-core-c
+ ommands-3.6.0.jar org-eclipse-equinox-common-3.6.0.jar osgi-4.0.0.jar
+  common.jar kxml2-2.3.0.jar annotations.jar guava-18.0.jar
+Main-Class: com.android.uiautomator.UiAutomatorViewer
 ```
 这些jar可以到你本地的${ANDROID_HOME}/tools/lib中找到
+
+希望添加的功能列表:
+
+* [x] 添加xpath
+* [ ] 添加ios版本支持
+* [ ] 添加appium脚本代码
+* [ ] 等等
+
+感谢
+---
+[yangzaiCN/uiautomatorviewer](https://github.com/yangzaiCN/uiautomatorviewer)
