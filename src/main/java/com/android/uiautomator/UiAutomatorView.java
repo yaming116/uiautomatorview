@@ -106,7 +106,7 @@ public class UiAutomatorView extends Composite {
     private ToolItem itemDeleteAndInfo;
     private Text searchTextarea;
     private Cursor mOrginialCursor;
-    private ToolItem itemPrev, itemNext;
+    private ToolItem itemPrev, itemNext, itemAdb;
     private ToolItem coordinateLabel;
 
     private String mLastSearchedTerm;
@@ -311,7 +311,11 @@ public class UiAutomatorView extends Composite {
         coordinateLabel = new ToolItem(searchtoolbar, SWT.SIMPLE);
         coordinateLabel.setText("");
         coordinateLabel.setEnabled(false);
-
+        itemAdb = new ToolItem(searchtoolbar, SWT.CHECK);
+        itemAdb.setImage(ImageHelper.loadImageDescriptorFromResource("images/icon_slelected.png")
+                .createImage());
+        itemAdb.setSelection(true);
+        itemAdb.setText("adb");
         // add search function
         searchTextarea.addKeyListener(new KeyListener() {
             @Override
@@ -348,12 +352,21 @@ public class UiAutomatorView extends Composite {
                  } else if (se.getSource() == itemDeleteAndInfo) {
                     searchTextarea.setText("");
                     clearSearchResult();
-                 }
+                 }else if (se.getSource() == itemAdb) {
+                    if (itemAdb.getSelection()) {
+                        itemAdb.setImage(ImageHelper.loadImageDescriptorFromResource("images/icon_slelected.png")
+                                .createImage());
+                    }else {
+                        itemAdb.setImage(ImageHelper.loadImageDescriptorFromResource("images/icon_empty.png")
+                                .createImage());
+                    }
+                }
             }
         };
         itemPrev.addSelectionListener(l);
         itemNext.addSelectionListener(l);
         itemDeleteAndInfo.addSelectionListener(l);
+        itemAdb.addSelectionListener(l);
 
         searchtoolbar.pack();
         searchtoolbar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -468,6 +481,10 @@ public class UiAutomatorView extends Composite {
         }
         mSearchResultIndex = (mSearchResultIndex + 1) % mSearchResult.size();
         updateSearchResultSelection();
+    }
+
+    public boolean isAdbShot(){
+        return itemAdb.getSelection();
     }
 
     private void updateSearchResultSelection() {

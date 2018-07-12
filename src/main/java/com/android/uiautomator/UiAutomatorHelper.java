@@ -43,6 +43,10 @@ public class UiAutomatorHelper {
     private static final String UIAUTOMATOR = "/system/bin/uiautomator";    //$NON-NLS-1$
     private static final String UIAUTOMATOR_DUMP_COMMAND = "dump";          //$NON-NLS-1$
     private static final String UIDUMP_DEVICE_PATH = "/data/local/tmp/uidump.xml";  //$NON-NLS-1$
+    private static final String ADB_UIDUMP_DEVICE_PATH = "/data/local/tmp/local/tmp/uidump.xm";
+    private static final String ADB_UIDUMP_SHOT_PATH = "/data/local/tmp/uishot.png";
+    private static final String UIAUTOMATOR_TEST_COMMAND = "runtest LvmamaXmlKit.jar";
+    private static final String UIAUTOMATOR_TEST_COMMAND_ARGS = "-c com.lvmama.uidump.DumpXml";
     private static final int XML_CAPTURE_TIMEOUT_SEC = 40;
 
     private static boolean supportsUiAutomator(IDevice device) {
@@ -62,7 +66,8 @@ public class UiAutomatorHelper {
         if (monitor == null) {
             monitor = new NullProgressMonitor();
         }
-
+        long time = System.currentTimeMillis();
+        System.out.println("================================"  );
         monitor.subTask("Deleting old UI XML snapshot ...");
         String command = "rm " + UIDUMP_DEVICE_PATH;
 
@@ -74,7 +79,8 @@ public class UiAutomatorHelper {
         } catch (Exception e1) {
             // ignore exceptions while deleting stale files
         }
-
+        System.out.println("Deleting old UI XML snapshot   = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
         monitor.subTask("Taking UI XML snapshot...");
         if (compressed){
             command = String.format("%s %s --compressed %s", UIAUTOMATOR,
@@ -94,12 +100,16 @@ public class UiAutomatorHelper {
                     XML_CAPTURE_TIMEOUT_SEC * 1000);
             commandCompleteLatch.await(XML_CAPTURE_TIMEOUT_SEC, TimeUnit.SECONDS);
 
+            System.out.println("Taking UI XML snapshot   = " + (System.currentTimeMillis() - time) );
+            time = System.currentTimeMillis();
             monitor.subTask("Pull UI XML snapshot from device...");
             device.getSyncService().pullFile(UIDUMP_DEVICE_PATH,
                     dst.getAbsolutePath(), SyncService.getNullProgressMonitor());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        System.out.println("Pull UI XML snapshot from device   = " + (System.currentTimeMillis() - time) );
+        System.out.println("================================"  );
     }
 
     //to maintain a backward compatible api, use non-compressed as default snapshot type
@@ -113,14 +123,15 @@ public class UiAutomatorHelper {
         if (monitor == null) {
             monitor = new NullProgressMonitor();
         }
-
+        long time = System.currentTimeMillis();
         monitor.subTask("Checking if device support UI Automator");
         if (!supportsUiAutomator(device)) {
             String msg = "UI Automator requires a device with API Level "
                                 + UIAUTOMATOR_MIN_API_LEVEL;
             throw new UiAutomatorException(msg, null);
         }
-
+        System.out.println("Checking device   = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
         monitor.subTask("Creating temporary files for uiautomator results.");
         File tmpDir = null;
         File xmlDumpFile = null;
@@ -142,6 +153,8 @@ public class UiAutomatorHelper {
         xmlDumpFile.deleteOnExit();
         screenshotFile.deleteOnExit();
 
+        System.out.println("Creating temporary files   = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
         monitor.subTask("Obtaining UI hierarchy");
         try {
             UiAutomatorHelper.getUiHierarchyFile(device, xmlDumpFile, monitor, compressed);
@@ -149,7 +162,8 @@ public class UiAutomatorHelper {
             String msg = "Error while obtaining UI hierarchy XML file: " + e.getMessage();
             throw new UiAutomatorException(msg, e);
         }
-
+        System.out.println("Obtaining UI hierarchy  = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
         UiAutomatorModel model;
         try {
             model = new UiAutomatorModel(xmlDumpFile);
@@ -157,7 +171,8 @@ public class UiAutomatorHelper {
             String msg = "Error while parsing UI hierarchy XML file: " + e.getMessage();
             throw new UiAutomatorException(msg, e);
         }
-
+        System.out.println("parsing UI hierarchy XML  = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
         monitor.subTask("Obtaining device screenshot");
         RawImage rawImage;
         try {
@@ -166,7 +181,8 @@ public class UiAutomatorHelper {
             String msg = "Error taking device screenshot: " + e.getMessage();
             throw new UiAutomatorException(msg, e);
         }
-
+        System.out.println("taking device screenshot  = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
         // rotate the screen shot per device rotation
         BasicTreeNode root = model.getXmlRootNode();
         if (root instanceof RootWindowNode) {
@@ -184,7 +200,141 @@ public class UiAutomatorHelper {
         loader.data = new ImageData[] { imageData };
         loader.save(screenshotFile.getAbsolutePath(), SWT.IMAGE_PNG);
         Image screenshot = new Image(Display.getDefault(), imageData);
+        System.out.println("parse device screenshot  = " + (System.currentTimeMillis() - time) );
+        return new UiAutomatorResult(xmlDumpFile, model, screenshot);
+    }
 
+    public static UiAutomatorResult takeSnapshotByADB(IDevice device, IProgressMonitor monitor,
+                                                 boolean compressed) throws UiAutomatorException {
+        if (monitor == null) {
+            monitor = new NullProgressMonitor();
+        }
+        long time = System.currentTimeMillis();
+        monitor.subTask("Checking if device support UI Automator");
+        if (!supportsUiAutomator(device)) {
+            String msg = "UI Automator requires a device with API Level "
+                    + UIAUTOMATOR_MIN_API_LEVEL;
+            throw new UiAutomatorException(msg, null);
+        }
+        System.out.println("Checking device   = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
+        monitor.subTask("Creating temporary files for uiautomator results.");
+        File tmpDir = null;
+        File xmlDumpFile = null;
+        File screenshotFile = null;
+        try {
+            tmpDir = File.createTempFile("uiautomatorviewer_", "");
+            tmpDir.delete();
+            if (!tmpDir.mkdirs())
+                throw new IOException("Failed to mkdir");
+            xmlDumpFile = File.createTempFile("dump_", ".uix", tmpDir);
+            screenshotFile = File.createTempFile("screenshot_", ".png", tmpDir);
+        } catch (Exception e) {
+            String msg = "Error while creating temporary file to save snapshot: "
+                    + e.getMessage();
+            throw new UiAutomatorException(msg, e);
+        }
+
+        tmpDir.deleteOnExit();
+        xmlDumpFile.deleteOnExit();
+        screenshotFile.deleteOnExit();
+        System.out.println("Creating temporary files   = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
+        monitor.subTask("Deleting old UI XML snapshot ...");
+        String command = "rm " + ADB_UIDUMP_DEVICE_PATH;
+
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(command,
+                    new CollectingOutputReceiver(commandCompleteLatch));
+            commandCompleteLatch.await(5, TimeUnit.SECONDS);
+        } catch (Exception e1) {
+            // ignore exceptions while deleting stale files
+        }
+
+        command = "rm " + ADB_UIDUMP_SHOT_PATH;
+
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(command,
+                    new CollectingOutputReceiver(commandCompleteLatch));
+            commandCompleteLatch.await(5, TimeUnit.SECONDS);
+        } catch (Exception e1) {
+            // ignore exceptions while deleting stale files
+        }
+        monitor.subTask("Taking UI XML snapshot and device screenshot...");
+        command = String.format("%s %s %s", UIAUTOMATOR,
+                UIAUTOMATOR_TEST_COMMAND,
+                UIAUTOMATOR_TEST_COMMAND_ARGS);
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(command,
+                    new CollectingOutputReceiver(commandCompleteLatch));
+            commandCompleteLatch.await(20, TimeUnit.SECONDS);
+        } catch (Exception e1) {
+            String msg = "Error while dump ui and xml,please check /data/local/tmp/LvmamaXmlKit.jar is exist: "
+                    + e1.getMessage();
+            throw new UiAutomatorException(msg, e1);
+        }
+        monitor.subTask("Moving UI XML snapshot...");
+
+        command = "/data/local/tmp/local/tmp/uidump.xml /data/local/tmp";
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(command,
+                    new CollectingOutputReceiver(commandCompleteLatch));
+            commandCompleteLatch.await(5, TimeUnit.SECONDS);
+        } catch (Exception e1) {
+            // ignore exceptions while deleting stale files
+        }
+        System.out.println("Dump ui and ui xml   = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
+        monitor.subTask("Pull UI XML snapshot from device...");
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(
+                    command,
+                    new CollectingOutputReceiver(commandCompleteLatch),
+                    XML_CAPTURE_TIMEOUT_SEC * 1000);
+            commandCompleteLatch.await(XML_CAPTURE_TIMEOUT_SEC, TimeUnit.SECONDS);
+
+
+            device.getSyncService().pullFile(UIDUMP_DEVICE_PATH,
+                    xmlDumpFile.getAbsolutePath(), SyncService.getNullProgressMonitor());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        monitor.subTask("Pull UI snapshot from device...");
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(
+                    command,
+                    new CollectingOutputReceiver(commandCompleteLatch),
+                    XML_CAPTURE_TIMEOUT_SEC * 1000);
+            commandCompleteLatch.await(XML_CAPTURE_TIMEOUT_SEC, TimeUnit.SECONDS);
+
+            device.getSyncService().pullFile(ADB_UIDUMP_SHOT_PATH,
+                    screenshotFile.getAbsolutePath(), SyncService.getNullProgressMonitor());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("pull ui and ui xml   = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
+        UiAutomatorModel model;
+        try {
+            model = new UiAutomatorModel(xmlDumpFile);
+        } catch (Exception e) {
+            String msg = "Error while parsing UI hierarchy XML file: " + e.getMessage();
+            throw new UiAutomatorException(msg, e);
+        }
+        System.out.println("parsing UI hierarchy XML  = " + (System.currentTimeMillis() - time) );
+        time = System.currentTimeMillis();
+        ImageData imageData = new ImageData(screenshotFile.getAbsolutePath());
+//        ImageLoader loader = new ImageLoader();
+//        loader.data = new ImageData[] { imageData };
+//        loader.save(screenshotFile.getAbsolutePath(), SWT.IMAGE_PNG);
+        Image screenshot = new Image(Display.getDefault(), imageData);
+        System.out.println("parse device screenshot  = " + (System.currentTimeMillis() - time) );
         return new UiAutomatorResult(xmlDumpFile, model, screenshot);
     }
 
