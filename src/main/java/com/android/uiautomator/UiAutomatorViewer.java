@@ -89,6 +89,10 @@ public class UiAutomatorViewer extends ApplicationWindow {
         newShell.setText("UI Automator Viewer");
     }
 
+    public boolean isAdbShot(){
+        return mUiAutomatorView.isAdbShot();
+    }
+
     @Override
     protected Point getInitialSize() {
         return new Point(800, 600);

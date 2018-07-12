@@ -79,7 +79,7 @@ public class ScreenshotAction extends Action {
         if (device == null) {
             return;
         }
-
+        final boolean isAdb = mViewer.isAdbShot();
         ProgressMonitorDialog dialog = new ProgressMonitorDialog(mViewer.getShell());
         try {
             dialog.run(true, false, new IRunnableWithProgress() {
@@ -88,7 +88,11 @@ public class ScreenshotAction extends Action {
                                                                         InterruptedException {
                     UiAutomatorResult result = null;
                     try {
-                        result = UiAutomatorHelper.takeSnapshot(device, monitor, mCompressed);
+                        if (isAdb) {
+                            result = UiAutomatorHelper.takeSnapshotByADB(device, monitor, mCompressed);
+                        }else {
+                            result = UiAutomatorHelper.takeSnapshot(device, monitor, mCompressed);
+                        }
                     } catch (UiAutomatorException e) {
                         monitor.done();
                         showError(e.getMessage(), e);
