@@ -12,7 +12,7 @@ UIautomatorvViewer
 
 方式2.执行gradle jar命令(或gradlew jar)，编译工程，将build目录下编译出来的uiautomatorviewer.jar替换你本地的${ANDROID_HOME}/tools/lib下的uiautomatorviewer.jar即可
 
-####目前默认使用adb截图和dump xml
+#### 目前默认使用adb截图和dump xml
 
 adb截图使用的是[LvmamaXmlKit](https://testerhome.com/topics/12459),所以使用此功能需要把这个#jar 导入到手机中#，命令如下：
 ```
@@ -45,6 +45,7 @@ Main-Class: com.android.uiautomator.UiAutomatorViewer
 
 * [x] 添加xpath
 * [x] 增加adb截图
+* [x] 增加右键点击事件
 * [ ] 添加ios版本支持
 * [ ] 添加appium脚本代码
 * [ ] 等等

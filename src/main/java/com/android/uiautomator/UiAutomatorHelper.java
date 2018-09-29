@@ -43,7 +43,8 @@ public class UiAutomatorHelper {
     private static final String UIAUTOMATOR = "/system/bin/uiautomator";    //$NON-NLS-1$
     private static final String UIAUTOMATOR_DUMP_COMMAND = "dump";          //$NON-NLS-1$
     private static final String UIDUMP_DEVICE_PATH = "/data/local/tmp/uidump.xml";  //$NON-NLS-1$
-    private static final String ADB_UIDUMP_DEVICE_PATH = "/data/local/tmp/local/tmp/uidump.xm";
+    private static final String ADB_UIDUMP_DEVICE_DIR = "/data/local/tmp/local/tmp/";
+    private static final String ADB_UIDUMP_DEVICE_PATH = ADB_UIDUMP_DEVICE_DIR + "uidump.xml";
     private static final String ADB_UIDUMP_SHOT_PATH = "/data/local/tmp/uishot.png";
     private static final String UIAUTOMATOR_TEST_COMMAND = "runtest LvmamaXmlKit.jar";
     private static final String UIAUTOMATOR_TEST_COMMAND_ARGS = "-c com.lvmama.uidump.DumpXml";
@@ -60,6 +61,20 @@ public class UiAutomatorHelper {
 
         return apiLevel >= UIAUTOMATOR_MIN_API_LEVEL;
     }
+
+    //adb shell input tap 540 1104
+    public static void click(IDevice device, int x, int y) {
+        String command = String.format("input tap %d %d", x, y);
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(command,
+                    new CollectingOutputReceiver(commandCompleteLatch));
+            commandCompleteLatch.await(5, TimeUnit.SECONDS);
+        } catch (Exception e1) {
+            // ignore exceptions while deleting stale files
+        }
+    }
+
 
     private static void getUiHierarchyFile(IDevice device, File dst,
             IProgressMonitor monitor, boolean compressed) {
@@ -252,6 +267,17 @@ public class UiAutomatorHelper {
             // ignore exceptions while deleting stale files
         }
 
+        command = "mkdir -p " + ADB_UIDUMP_DEVICE_DIR;
+
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(command,
+                    new CollectingOutputReceiver(commandCompleteLatch));
+            commandCompleteLatch.await(5, TimeUnit.SECONDS);
+        } catch (Exception e1) {
+            // ignore exceptions while deleting stale files
+        }
+
         command = "rm " + ADB_UIDUMP_SHOT_PATH;
 
         try {
@@ -278,7 +304,7 @@ public class UiAutomatorHelper {
         }
         monitor.subTask("Moving UI XML snapshot...");
 
-        command = "/data/local/tmp/local/tmp/uidump.xml /data/local/tmp";
+        command = "mv " + ADB_UIDUMP_DEVICE_PATH + " /data/local/tmp";
         try {
             CountDownLatch commandCompleteLatch = new CountDownLatch(1);
             device.executeShellCommand(command,

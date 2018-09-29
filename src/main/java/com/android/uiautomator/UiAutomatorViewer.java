@@ -57,7 +57,8 @@ public class UiAutomatorViewer extends ApplicationWindow {
 
         ToolBarManager toolBarManager = new ToolBarManager(SWT.FLAT);
         toolBarManager.add(new OpenFilesAction(this));
-        toolBarManager.add(new ScreenshotAction(this,false));
+        ScreenshotAction screenshotAction = new ScreenshotAction(this,false);
+        toolBarManager.add(screenshotAction);
         toolBarManager.add(new ScreenshotAction(this,true));
         toolBarManager.add(new SaveScreenShotAction(this));
         ToolBar tb = toolBarManager.createControl(c);
@@ -65,7 +66,7 @@ public class UiAutomatorViewer extends ApplicationWindow {
 
         mUiAutomatorView = new UiAutomatorView(c, SWT.BORDER);
         mUiAutomatorView.setLayoutData(new GridData(GridData.FILL_BOTH));
-
+        mUiAutomatorView.setScreenshotAction(screenshotAction);
         return parent;
     }
 
@@ -91,6 +92,14 @@ public class UiAutomatorViewer extends ApplicationWindow {
 
     public boolean isAdbShot(){
         return mUiAutomatorView.isAdbShot();
+    }
+
+    public UiAutomatorView getUiAutomatorView() {
+        return mUiAutomatorView;
+    }
+
+    public ScreenshotAction getScreenshotAction(){
+        return (ScreenshotAction) getToolBarManager().find(ScreenshotAction.ID);
     }
 
     @Override

@@ -48,6 +48,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 public class ScreenshotAction extends Action {
+    public static final String ID = "ScreenshotAction";
     UiAutomatorViewer mViewer;
     private boolean mCompressed;
 
@@ -56,6 +57,11 @@ public class ScreenshotAction extends Action {
                 +"(uiautomator dump" + (compressed ? " --compressed)" : ")"));
         mViewer = viewer;
         mCompressed = compressed;
+    }
+
+    @Override
+    public String getId() {
+        return ID;
     }
 
     @Override
@@ -79,6 +85,7 @@ public class ScreenshotAction extends Action {
         if (device == null) {
             return;
         }
+        mViewer.getUiAutomatorView().setDevice(device);
         final boolean isAdb = mViewer.isAdbShot();
         ProgressMonitorDialog dialog = new ProgressMonitorDialog(mViewer.getShell());
         try {
