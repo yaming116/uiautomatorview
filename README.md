@@ -45,6 +45,7 @@ Main-Class: com.android.uiautomator.UiAutomatorViewer
 
 * [x] 添加xpath
 * [x] 增加adb截图
+* [x] 增加右键点击事件
 * [ ] 添加ios版本支持
 * [ ] 添加appium脚本代码
 * [ ] 等等
