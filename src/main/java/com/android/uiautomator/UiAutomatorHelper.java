@@ -62,6 +62,20 @@ public class UiAutomatorHelper {
         return apiLevel >= UIAUTOMATOR_MIN_API_LEVEL;
     }
 
+    //adb shell input tap 540 1104
+    public static void click(IDevice device, int x, int y) {
+        String command = String.format("input tap %d %d", x, y);
+        try {
+            CountDownLatch commandCompleteLatch = new CountDownLatch(1);
+            device.executeShellCommand(command,
+                    new CollectingOutputReceiver(commandCompleteLatch));
+            commandCompleteLatch.await(5, TimeUnit.SECONDS);
+        } catch (Exception e1) {
+            // ignore exceptions while deleting stale files
+        }
+    }
+
+
     private static void getUiHierarchyFile(IDevice device, File dst,
             IProgressMonitor monitor, boolean compressed) {
         if (monitor == null) {

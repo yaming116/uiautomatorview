@@ -16,8 +16,10 @@
 
 package com.android.uiautomator;
 
+import com.android.ddmlib.IDevice;
 import com.android.uiautomator.actions.ExpandAllAction;
 import com.android.uiautomator.actions.ImageHelper;
+import com.android.uiautomator.actions.ScreenshotAction;
 import com.android.uiautomator.actions.ToggleNafAction;
 import com.android.uiautomator.tree.AttributePair;
 import com.android.uiautomator.tree.BasicTreeNode;
@@ -113,6 +115,9 @@ public class UiAutomatorView extends Composite {
 
     private Cursor mCrossCursor;
 
+    private IDevice mDevice;
+    private ScreenshotAction mScreenshotAction;
+
     public UiAutomatorView(Composite parent, int style) {
         super(parent, SWT.NONE);
         setLayout(new FillLayout());
@@ -145,9 +150,17 @@ public class UiAutomatorView extends Composite {
         mScreenshotCanvas.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseUp(MouseEvent e) {
-                if (mModel != null) {
+                //点击左键
+                if (mModel != null && e.button == 1) {
                     mModel.toggleExploreMode();
                     redrawScreenshot();
+                }else if (mModel != null && e.button == 3) {
+                    int x = getInverseScaledSize(e.x - mDx);
+                    int y = getInverseScaledSize(e.y - mDy);
+                    if (mDevice != null) {
+                        UiAutomatorHelper.click(mDevice, x, y);
+                        mScreenshotAction.run();
+                    }
                 }
             }
         });
@@ -499,6 +512,18 @@ public class UiAutomatorView extends Composite {
         } else {
             return new Double(Math.floor((size * mScale))).intValue();
         }
+    }
+
+    public void setDevice(IDevice device) {
+        this.mDevice = device;
+    }
+
+    public IDevice getDevice() {
+        return mDevice;
+    }
+
+    public void setScreenshotAction(ScreenshotAction mScreenshotAction) {
+        this.mScreenshotAction = mScreenshotAction;
     }
 
     private int getInverseScaledSize(int size) {
